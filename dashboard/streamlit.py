@@ -30,6 +30,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
+st.write(f"### Filter the Entire Dashboard")
+
 # year and metrics
 col1, col2 = st.columns(2)
 year = col1.selectbox('Select Year', options=['Both Years', 2019, 2020])
@@ -57,6 +59,7 @@ reason_mapping = {
     'Previous Flight Delayed': ['late_aircraft_ct', 'late_aircraft_delay']
 }
 
+st.markdown("<br>", unsafe_allow_html=True)
 
 # BAR PLOT
 def create_plot(data, x, y, title, xlabel, ylabel):
@@ -155,10 +158,12 @@ def create_pie_chart(data, airline):
 
 
 #################### DASHBOARD ####################
+st.markdown("<br>", unsafe_allow_html=True)
+
 if not selected_reasons:
     st.error('Please select at least one reason for delay.')
 else:
-    st.write(f"## Overview of {option}")
+    st.write(f"### Overview of {option}")
 
     if option == 'Total Flights':
         metric = df.groupby('carrier_name', observed=True)['arr_flights'].sum().reset_index().sort_values('arr_flights', ascending=True)
@@ -197,12 +202,12 @@ else:
         st.plotly_chart(fig, use_container_width=True)
     
 
-    st.write("## Distribution Matrix of Delay Performance by Average Time Delay and Percentage of Delayed Flights")
+    st.write("### Distribution Matrix of Delay Performance by Average Time Delay and Percentage of Delayed Flights")
     scatter_fig = create_scatter_plot(df, selected_reasons)
     st.plotly_chart(scatter_fig, use_container_width=True)
 
 
-    st.write("## Percentage distribution of different types of delays")
+    st.write("### Percentage distribution of different types of delays")
     airline_selection = st.selectbox('Select Airline', options=['All Airlines'] + list(df['carrier_name'].cat.categories))
     pie_fig = create_pie_chart(df, airline_selection)
     st.plotly_chart(pie_fig, use_container_width=True)
