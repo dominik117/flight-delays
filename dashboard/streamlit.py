@@ -226,7 +226,8 @@ def make_scatter_map(size, color, title):
         lon = airport_delays['longitude_deg'],
         lat = airport_delays['latitude_deg'],
         text = airport_delays['name'] + '<br>Delay Average: ' + airport_delays['delay_time_average'].round(1).astype(str) + 
-            '<br>Delay Percentage: ' + airport_delays['delay_percentage'].round(1).astype(str),
+            '<br>Delay Percentage: ' + airport_delays['delay_percentage'].round(1).astype(str) +
+            '<br>Number of Flights: ' + airport_delays[size].astype(int).astype(str),
 
         marker = dict(
             size = airport_delays[size], 
