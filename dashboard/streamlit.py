@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from scipy import stats
 
 @st.cache_data
 def load_data():
@@ -9,8 +11,20 @@ def load_data():
     df = df.dropna(axis=0).reset_index(drop=True)
     return df
 
+@st.cache_data
+def load_airport_data():
+    df_airports = pd.read_csv('data/us-airports.csv')
+    df_airports = df_airports.drop(df_airports.index[0]).reset_index(drop=True)
+    df_airports2 = pd.read_csv('data/airports.csv')
+    df_airports2.rename(columns={'LATITUDE':'latitude_deg', 'LONGITUDE':'longitude_deg', 'AIRPORT':'name', 'STATE':'local_region', 'CITY':'municipality'}, inplace=True)
+    df_airports2.drop(columns=['COUNTRY'], inplace=True)
+    return df_airports, df_airports2
+
+
 df = load_data()
 df['carrier_name'] = df['carrier_name'].astype('category')
+
+df_airports, df_airports2 = load_airport_data()
 
 st.markdown("""
 <style>
@@ -62,6 +76,43 @@ reason_mapping = {
 }
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+#####
+# Data processing for maps
+df_full = pd.merge(df, df_airports[['local_code', 'latitude_deg', 'longitude_deg', 'name', 'local_region', 'municipality']], left_on='airport', right_on='local_code', how='left')
+df_full = pd.merge(df_full, df_airports2, left_on='airport', right_on='IATA', how='left', suffixes=('', '_2'))
+
+for column in df_airports2.columns:
+    if column == "IATA":
+        continue
+    df_full[column] = df_full[column].fillna(df_full[column+"_2"])
+df_full.drop([x+"_2" for x in df_airports2.columns if x != "IATA"], axis=1, inplace=True)
+
+airport_delays_agg = df_full.groupby('airport').agg({
+    'arr_flights': 'sum',
+    'arr_del15': 'sum',
+    'arr_delay': 'sum'
+}).reset_index()
+
+airport_delays_agg.rename(columns={'arr_flights': 'arr_flights_sum', 'arr_del15': 'arr_del15_sum', 'arr_delay': 'arr_delay_sum'}, inplace=True)
+
+airport_delays_agg['delay_percentage'] = (airport_delays_agg['arr_del15_sum'] / airport_delays_agg['arr_flights_sum']) * 100
+airport_delays_agg['delay_time_average'] = (airport_delays_agg['arr_delay_sum'] / airport_delays_agg['arr_del15_sum'])
+
+airport_delays = pd.merge(df_full, airport_delays_agg, on='airport', how='left')
+airport_delays.dropna(subset=['delay_time_average', 'delay_percentage'], inplace=True)
+
+z_scores = stats.zscore(airport_delays['delay_percentage'])
+airport_delays = airport_delays[(z_scores < 3.5)]
+
+z_scores = stats.zscore(airport_delays['delay_time_average'])
+airport_delays = airport_delays[(z_scores < 3.5)]
+
+airport_delays['scaled_delay_average'] = np.log1p(airport_delays['delay_time_average'])
+airport_delays['scaled_delay_percentage'] = np.log1p(airport_delays['delay_percentage'])
+
+airport_delays.dropna(inplace=True)
+###########
 
 # BAR PLOT
 def create_plot(data, x, y, title, xlabel, ylabel):
@@ -167,6 +218,52 @@ def create_pie_chart(data, airline):
     return fig
 
 
+# SCATTER MAP
+def make_scatter_map(size, color, title):
+    fig = go.Figure()
+
+    fig.add_trace(go.Scattergeo(
+        lon = airport_delays['longitude_deg'],
+        lat = airport_delays['latitude_deg'],
+        text = airport_delays['name'] + '<br>Delay Average: ' + airport_delays['delay_time_average'].round(1).astype(str) + 
+            '<br>Delay Percentage: ' + airport_delays['delay_percentage'].round(1).astype(str),
+
+        marker = dict(
+            size = airport_delays[size], 
+            color = airport_delays[color],
+            colorscale = 'RdYlGn_r',
+            colorbar_title = '',
+            line_color='grey',
+            sizemode = 'area',
+            sizeref = airport_delays[size].max() / 350, 
+            sizemin = 3.5  # minimum marker size
+        ),
+        hoverinfo='text'
+    ))
+
+    fig.update_geos(
+        resolution=110,
+        showcountries=True, 
+        landcolor="beige",
+        countrycolor="black",
+        subunitcolor="grey"
+    )
+
+    fig.update_layout(
+        title=dict(text=title, x=0.5),
+        geo=dict(
+            scope='usa',
+            projection_type='albers usa',
+            lakecolor='#E5E4E2',
+            bgcolor='rgba(255,255,255,0.8)'
+        ),
+        margin=dict(l=0, r=0, t=40, b=10),
+        width=1000,
+        height=500
+    )
+    return fig
+
+
 
 #################### DASHBOARD ####################
 st.markdown("<hr style='border:2px solid #CF0A2C;'>", unsafe_allow_html=True)
@@ -224,3 +321,16 @@ else:
     airline_selection = st.selectbox('Select Airline', options=['All Airlines'] + list(df['carrier_name'].cat.categories))
     pie_fig = create_pie_chart(df, airline_selection)
     st.plotly_chart(pie_fig, use_container_width=True)
+
+    st.markdown("<hr style='border:2px solid #CF0A2C;'>", unsafe_allow_html=True)
+
+    st.write("### Airport Delays Scatter Map")
+    map_option = st.selectbox('Select Map Metric', ('Average Time Delay', 'Percentage of Delays'))
+    if map_option == 'Average Time Delay':
+        map_fig = make_scatter_map(size='arr_flights_sum', color='delay_time_average', title="Average Time Delay by Airport")
+        color_scale_text = "Color scale: Average Time Delay (minutes)"
+    else:
+        map_fig = make_scatter_map(size='arr_flights_sum', color='delay_percentage', title="Flight Delays by Airport")
+        color_scale_text = "Color scale: Percentage of Delays"
+    st.plotly_chart(map_fig, use_container_width=True)
+    st.write(color_scale_text)
