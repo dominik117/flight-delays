@@ -20,11 +20,39 @@ def load_airport_data():
     df_airports2.drop(columns=['COUNTRY'], inplace=True)
     return df_airports, df_airports2
 
-
 df = load_data()
 df['carrier_name'] = df['carrier_name'].astype('category')
-
 df_airports, df_airports2 = load_airport_data()
+
+
+#####
+# Data processing for maps
+df_full = pd.merge(df, df_airports[['local_code', 'latitude_deg', 'longitude_deg', 'name', 'local_region', 'municipality']], left_on='airport', right_on='local_code', how='left')
+df_full = pd.merge(df_full, df_airports2, left_on='airport', right_on='IATA', how='left', suffixes=('', '_2'))
+for column in df_airports2.columns:
+    if column == "IATA":
+        continue
+    df_full[column] = df_full[column].fillna(df_full[column+"_2"])
+df_full.drop([x+"_2" for x in df_airports2.columns if x != "IATA"], axis=1, inplace=True)
+airport_delays_agg = df_full.groupby('airport').agg({
+    'arr_flights': 'sum',
+    'arr_del15': 'sum',
+    'arr_delay': 'sum'
+}).reset_index()
+airport_delays_agg.rename(columns={'arr_flights': 'arr_flights_sum', 'arr_del15': 'arr_del15_sum', 'arr_delay': 'arr_delay_sum'}, inplace=True)
+airport_delays_agg['delay_percentage'] = (airport_delays_agg['arr_del15_sum'] / airport_delays_agg['arr_flights_sum']) * 100
+airport_delays_agg['delay_time_average'] = (airport_delays_agg['arr_delay_sum'] / airport_delays_agg['arr_del15_sum'])
+airport_delays = pd.merge(df_full, airport_delays_agg, on='airport', how='left')
+airport_delays.dropna(subset=['delay_time_average', 'delay_percentage'], inplace=True)
+z_scores = stats.zscore(airport_delays['delay_percentage'])
+airport_delays = airport_delays[(z_scores < 3.5)]
+z_scores = stats.zscore(airport_delays['delay_time_average'])
+airport_delays = airport_delays[(z_scores < 3.5)]
+airport_delays['scaled_delay_average'] = np.log1p(airport_delays['delay_time_average'])
+airport_delays['scaled_delay_percentage'] = np.log1p(airport_delays['delay_percentage'])
+airport_delays.dropna(inplace=True)
+###########
+
 
 st.markdown("""
 <style>
@@ -77,42 +105,6 @@ reason_mapping = {
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-#####
-# Data processing for maps
-df_full = pd.merge(df, df_airports[['local_code', 'latitude_deg', 'longitude_deg', 'name', 'local_region', 'municipality']], left_on='airport', right_on='local_code', how='left')
-df_full = pd.merge(df_full, df_airports2, left_on='airport', right_on='IATA', how='left', suffixes=('', '_2'))
-
-for column in df_airports2.columns:
-    if column == "IATA":
-        continue
-    df_full[column] = df_full[column].fillna(df_full[column+"_2"])
-df_full.drop([x+"_2" for x in df_airports2.columns if x != "IATA"], axis=1, inplace=True)
-
-airport_delays_agg = df_full.groupby('airport').agg({
-    'arr_flights': 'sum',
-    'arr_del15': 'sum',
-    'arr_delay': 'sum'
-}).reset_index()
-
-airport_delays_agg.rename(columns={'arr_flights': 'arr_flights_sum', 'arr_del15': 'arr_del15_sum', 'arr_delay': 'arr_delay_sum'}, inplace=True)
-
-airport_delays_agg['delay_percentage'] = (airport_delays_agg['arr_del15_sum'] / airport_delays_agg['arr_flights_sum']) * 100
-airport_delays_agg['delay_time_average'] = (airport_delays_agg['arr_delay_sum'] / airport_delays_agg['arr_del15_sum'])
-
-airport_delays = pd.merge(df_full, airport_delays_agg, on='airport', how='left')
-airport_delays.dropna(subset=['delay_time_average', 'delay_percentage'], inplace=True)
-
-z_scores = stats.zscore(airport_delays['delay_percentage'])
-airport_delays = airport_delays[(z_scores < 3.5)]
-
-z_scores = stats.zscore(airport_delays['delay_time_average'])
-airport_delays = airport_delays[(z_scores < 3.5)]
-
-airport_delays['scaled_delay_average'] = np.log1p(airport_delays['delay_time_average'])
-airport_delays['scaled_delay_percentage'] = np.log1p(airport_delays['delay_percentage'])
-
-airport_delays.dropna(inplace=True)
-###########
 
 # BAR PLOT
 def create_plot(data, x, y, title, xlabel, ylabel):
@@ -263,7 +255,6 @@ def make_scatter_map(size, color, title):
         height=500
     )
     return fig
-
 
 
 #################### DASHBOARD ####################
