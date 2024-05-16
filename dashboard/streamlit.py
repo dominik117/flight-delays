@@ -138,7 +138,8 @@ def create_scatter_plot(data, reasons):
         margin=dict(l=20, r=20, t=40, b=40), 
         autosize=True, 
         width=1000,
-        yaxis=dict(autorange='reversed')
+        yaxis=dict(autorange='reversed'),
+        xaxis=dict(autorange='reversed')
     )
     return fig
 
