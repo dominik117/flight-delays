@@ -38,6 +38,9 @@ if year != 'Both Years':
 
 option = col2.selectbox('Select Metric', ('Total Flights', 'Total Delays', 'Percentage of Delays', 'Average Time Delay'))
 
+
+
+st.markdown('<p style="font-size:14px;">Select Type of Delay</p>', unsafe_allow_html=True)
 # delay reasons
 with st.container():
     cols = st.columns(5)
