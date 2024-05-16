@@ -36,7 +36,7 @@ year = col1.selectbox('Select Year', options=['Both Years', 2019, 2020])
 if year != 'Both Years':
     df = df[df['year'] == int(year)]
 
-option = col2.selectbox('Select Metric', ('Total Flights', 'Total Delays', 'Percentage of Delays', 'Average Time Delay'))
+option = col2.selectbox('Select Metric', ('Percentage of Delays', 'Total Delays', 'Average Time Delay', 'Total Flights'))
 
 
 
