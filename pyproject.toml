@@ -10,7 +10,7 @@ repository = "https://github.com/dominik117/flight-delays"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "3.12.2"
+python = "^3.12.1"
 pandas = "^2.2.2"
 jupyter = "^1.0.0"
 ipykernel = "^6.29.4"
