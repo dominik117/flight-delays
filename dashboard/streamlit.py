@@ -12,7 +12,6 @@ def load_data():
 df = load_data()
 df['carrier_name'] = df['carrier_name'].astype('category')
 
-# App title with custom CSS for aesthetic improvements
 st.markdown("""
 <style>
 .title {
@@ -96,29 +95,45 @@ def create_scatter_plot(data, reasons):
     carrier_delays['delay_average'] = (carrier_delays['selected_delays'] / carrier_delays['selected_counts'])
     carrier_delays = carrier_delays.dropna(subset=['delay_percentage', 'delay_average'])
 
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=carrier_delays['delay_percentage'],
+        y=carrier_delays['delay_average'],
+        text=carrier_delays['carrier_name'],
+        mode='markers',
+        marker=dict(
+            size=13,
+            color=carrier_delays['delay_percentage'],
+            colorscale='RdYlGn_r',
+            showscale=False,
+            line=dict(width=2, color='black') 
+        ),
+        textposition='top center',
+        hovertemplate=(
+            '<b>%{text}</b><br>' +
+            'Delay Percentage: %{x:.1f}%<br>' +
+            'Average Delay: %{y:.1f} minutes<extra></extra>'
+        )
+    ))
 
-    fig = px.scatter(carrier_delays, 
-                     x='delay_percentage', 
-                     y='delay_average', 
-                     size='delay_percentage', 
-                     color='delay_percentage', 
-                     hover_name='carrier_name',
-                     color_continuous_scale='RdYlGn_r',
-                     title='Delay Performance Matrix')
-    
     median_delay_percentage = carrier_delays['delay_percentage'].median()
     median_delay_average = carrier_delays['delay_average'].median()
     
     fig.add_vline(x=median_delay_percentage, line=dict(color='red', dash='dash'))
     fig.add_hline(y=median_delay_average, line=dict(color='red', dash='dash'))
     
-    fig.update_layout(xaxis_title='Percentage of Delayed Flights (%)',
-                      yaxis_title='Average Time Delay (minutes)',
-                      font=dict(size=18), 
-                      margin=dict(l=20, r=20, t=40, b=40), autosize=True, width=1000, coloraxis_showscale=False,
-                      yaxis=dict(autorange='reversed'))
-    
+    fig.update_layout(
+        title='Delay Performance Matrix',
+        xaxis_title='Percentage of Delayed Flights (%)',
+        yaxis_title='Average Time Delay (minutes)',
+        font=dict(size=18), 
+        margin=dict(l=20, r=20, t=40, b=40), 
+        autosize=True, 
+        width=1000,
+        yaxis=dict(autorange='reversed')
+    )
     return fig
+
 
 # PIE CHART
 def create_pie_chart(data, airline):
