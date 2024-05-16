@@ -322,6 +322,7 @@ else:
     pie_fig = create_pie_chart(df, airline_selection)
     st.plotly_chart(pie_fig, use_container_width=True)
 
+
     st.markdown("<hr style='border:2px solid #CF0A2C;'>", unsafe_allow_html=True)
 
     st.write("### Airport Delays Scatter Map")
@@ -333,4 +334,10 @@ else:
         map_fig = make_scatter_map(size='arr_flights_sum', color='delay_percentage', title="Flight Delays by Airport")
         color_scale_text = "Color scale: Percentage of Delays"
     st.plotly_chart(map_fig, use_container_width=True)
-    st.write(color_scale_text)
+
+    # Align the texts to the right using Streamlit columns
+    col1, col2 = st.columns([2, 1])
+    with col2:
+        st.write(color_scale_text)
+        st.write("Size of markers: Total number of flights")
+
