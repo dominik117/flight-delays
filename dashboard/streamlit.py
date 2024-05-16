@@ -155,7 +155,15 @@ def create_pie_chart(data, airline):
     delay_percentages = [(data[delay].sum() / total_delays * 100) for delay in delay_types]
 
     fig = go.Figure(data=[go.Pie(labels=reason_labels, values=delay_percentages, hole=.3)])
-    fig.update_layout(title_text=f'Percentage of Delay Types for {airline}')
+    fig.update_layout(title_text=f'Percentage of Delay Types for {airline}',
+                      legend_title_text='Delay Reasons',
+                      legend=dict(
+            title=dict(
+                text='Delay Reasons',
+                font=dict(size=18)  
+            ),
+            font=dict(size=16) 
+        ))
     return fig
 
 
@@ -207,7 +215,7 @@ else:
         st.plotly_chart(fig, use_container_width=True)
     
 
-    st.write("### Distribution Matrix of Delay Performance by Average Time Delay and Percentage of Delayed Flights")
+    st.write("### Airline Distribution Matrix of Delay Performance by Average Time Delay and Percentage of Delayed Flights")
     scatter_fig = create_scatter_plot(df, selected_reasons)
     st.plotly_chart(scatter_fig, use_container_width=True)
 
