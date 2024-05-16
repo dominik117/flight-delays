@@ -28,6 +28,8 @@ st.markdown("""
 <div class='title'>US Airlines Delay Analysis</div>
 <div class='subtitle'>An overview of flight delays from US domestic passenger flights in December 2019 and December 2020</div>
 """, unsafe_allow_html=True)
+
+st.markdown("<hr style='border:2px solid #CF0A2C;'>", unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
 st.write(f"### Filter the Entire Dashboard")
@@ -158,7 +160,7 @@ def create_pie_chart(data, airline):
 
 
 #################### DASHBOARD ####################
-st.markdown("---")
+st.markdown("<hr style='border:2px solid #CF0A2C;'>", unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
