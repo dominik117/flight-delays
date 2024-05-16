@@ -158,6 +158,8 @@ def create_pie_chart(data, airline):
 
 
 #################### DASHBOARD ####################
+st.markdown("---")
+
 st.markdown("<br>", unsafe_allow_html=True)
 
 if not selected_reasons:
