@@ -46,7 +46,7 @@ st.markdown("""
 st.markdown("<hr style='border:2px solid #CF0A2C;'>", unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
-st.write(f"### Filter the Entire Dashboard")
+st.write(f"### Filter the Airline Plots")
 
 # year and metrics
 col1, col2 = st.columns(2)
