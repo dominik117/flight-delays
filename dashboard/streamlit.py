@@ -335,9 +335,8 @@ else:
         color_scale_text = "Color scale: Percentage of Delays"
     st.plotly_chart(map_fig, use_container_width=True)
 
-    # Align the texts to the right using Streamlit columns
     col1, col2 = st.columns([2, 1])
     with col2:
         st.write(color_scale_text)
-        st.write("Size of markers: Total number of flights")
+        st.write("Size of markers: Total number of flights per airport")
 
